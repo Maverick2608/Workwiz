@@ -1,12 +1,22 @@
 package com.example.workwiz;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Html;
 import android.util.Log;
@@ -20,6 +30,7 @@ import android.widget.Toast;
 import com.example.workwiz.util.JobUtil;
 import com.example.workwiz.viewModel.MainActivityViewModel;
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
@@ -33,7 +44,8 @@ import java.util.Collections;
 public class MainActivity extends AppCompatActivity implements
         View.OnClickListener,
         FilterDialogFragment.FilterListener,
-        com.example.workwiz.adapter.JobAdapter.OnRestaurantSelectedListener{
+        com.example.workwiz.adapter.JobAdapter.OnRestaurantSelectedListener,
+        NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "MainActivity";
 
@@ -54,6 +66,8 @@ public class MainActivity extends AppCompatActivity implements
     private com.example.workwiz.adapter.JobAdapter mAdapter;
 
     private MainActivityViewModel mViewModel;
+    private DrawerLayout drawer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +97,20 @@ public class MainActivity extends AppCompatActivity implements
 
         // Filter Dialog
         mFilterDialog = new FilterDialogFragment();
+
+        drawer = findViewById(R.id.drawer_layout);
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+        navigationView.setNavigationItemSelectedListener(this);
+
     }
+
+
+
+
 
     private void initFirestore() {
         // TODO(developer): Implement
@@ -291,5 +318,80 @@ public class MainActivity extends AppCompatActivity implements
 
     private void showTodoToast() {
         Toast.makeText(this, "TODO: Implement", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+
+        // Handle navigation view item clicks here.
+        Fragment fragment = null;
+        int id = item.getItemId();
+        //TODO: rewite FindJobFragment and MyProfileFragment
+        if (id == R.id.nav_home){
+            fragment = new FindJobFragment();
+        }
+        if (id == R.id.nav_profile) {
+            fragment = new MyProfileFragment();
+        }
+        if (id == R.id.nav_feedback){
+            fragment = new FeedbackFragment();
+        }
+        if (id == R.id.nav_logout){
+            //TODO: fix these after the fragments have been added
+            AlertDialog.Builder builder = new AlertDialog.Builder(Dashboard.this);
+            builder.setMessage("Are you sure you want to logout?");
+            builder.setPositiveButton("Ok", (dialog, id1) -> {
+
+                mAuth.signOut();
+                Intent intent = new Intent(getApplicationContext(),SignUpActivity.class);
+                startActivity(intent);
+                finish();
+            });
+            builder.setNegativeButton("Cancel", (dialog, id12) -> dialog.dismiss());
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        if (fragment!=null)
+        {
+            //TODO:I dont know where in the UI do we have content_frame
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.replace(R.id.content_frame,fragment);
+            ft.commit();
+        }
+        /* else if (id == R.id.activeJobs) {
+
+            Intent intent = new Intent(Dashboard.this, ActiveJobs.class);
+            startActivity(intent);
+
+        } else if (id == R.id.starredJobs) {
+
+            Intent intent = new Intent(Dashboard.this, StarredJobs.class);
+            startActivity(intent);
+
+
+        }
+
+        else if (id == R.id.statusNotification) {
+
+            Intent intent = new Intent(Dashboard.this, StatusNotification.class);
+            startActivity(intent);
+
+
+        }*/
+
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
     }
 }
